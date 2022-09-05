@@ -24,10 +24,12 @@ export function checksExistsUserAccount(req, res, next) {
 
 export function checksCreateTodosUserAvailability(req, res, next) {
     const {user} = req;
-    console.log(user);
+
     if(user.pro || user.todos.length < 10) {
         return next();
     }
+
+    return res.status(403).json({error: "Pro plan is not already or have 10 ToDos"});
 }
 
 export function checksTodoExists(req, res, next) {
@@ -40,10 +42,14 @@ export function checksTodoExists(req, res, next) {
         return res.status(404).json({error: "User not found"});
     }
 
+    if(!validate(id)) {
+        return res.status(400).json({error: "ID not valid"});
+    }
+
     const todo = user.todos.find((todo) => todo.id === id);
 
-    if(!todo && !validate(id)) {
-        return res.status(404).json({error: "ToDo not found or ID not valid"});
+    if(!todo) {
+        return res.status(404).json({error: "ToDo not found"});
     }
 
     req.user = user;
