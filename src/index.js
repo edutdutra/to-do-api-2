@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import {v4} from 'uuid'
+import {v4, validate} from 'uuid'
 
 
 const app = express();
@@ -23,16 +23,45 @@ export function checksExistsUserAccount(req, res, next) {
 }
 
 export function checksCreateTodosUserAvailability(req, res, next) {
-    const {user} = req.user
-
+    const {user} = req;
+    console.log(user);
+    if(user.pro || user.todos.length < 10) {
+        return next();
+    }
 }
 
-export function checksTodoExists(request, response, next) {
-    // Complete aqui
+export function checksTodoExists(req, res, next) {
+    const {username} = req.headers;
+    const {id} = req.params;
+
+    const user = users.find((user) => user.username === username);
+
+    if (!user) {
+        return res.status(404).json({error: "User not found"});
+    }
+
+    const todo = user.todos.find((todo) => todo.id === id);
+
+    if(!todo && !validate(id)) {
+        return res.status(404).json({error: "ToDo not found or ID not valid"});
+    }
+
+    req.user = user;
+    req.todo = todo;
+    return next();
 }
 
-export function findUserById(request, response, next) {
-    // Complete aqui
+export function findUserById(req, res, next) {
+    const {id} = req.params;
+
+    const user = users.find((user) => user.id === id);
+
+    if (!user) {
+        return res.status(404).json({error: "User not found"});
+    }
+
+    req.user = user;
+    return next();
 }
 
 app.post('/users', (request, response) => {
@@ -86,7 +115,7 @@ app.post('/todos', checksExistsUserAccount, checksCreateTodosUserAvailability, (
     const {user} = request;
 
     const newTodo = {
-        id: uuidv4(),
+        id: v4(),
         title,
         deadline: new Date(deadline),
         done: false,
@@ -131,12 +160,3 @@ app.delete('/todos/:id', checksExistsUserAccount, checksTodoExists, (request, re
 });
 
 export default app
-
-// module.exports = {
-//     app,
-//     users,
-//     checksExistsUserAccount,
-//     checksCreateTodosUserAvailability,
-//     checksTodoExists,
-//     findUserById
-// };
